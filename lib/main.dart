@@ -10,23 +10,76 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: LoginScreen(),
+      home: HomePageScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class Homepage extends StatelessWidget {
-  const Homepage({super.key});
+class HomePageScreen extends StatelessWidget {
+  const HomePageScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Text('Hello'),
+      appBar: AppBar(),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Center(
+            child:Image.asset('assets/Logo.png'
+            ,height: 145,
+            width: 145,
+            )
+          ),
+
+          Padding(
+            padding: EdgeInsets.only(top:20,bottom:10),
+            child:
+            Text("Devenir un chef", 
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontWeight: FontWeight.bold,
+                fontSize: 24     
+              ),
+            )
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 50.0),
+            child:
+            Text("Être un chef de la cuisine vous semblera simple grâce à nos recettes", 
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 18,   
+              ),
+              textAlign: TextAlign.center,
+            )
+          ),
+          Padding(padding: EdgeInsets.symmetric(vertical:50.0),
+              child:ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0XFFFFC500),
+                  padding: EdgeInsets.symmetric(vertical:20, horizontal: 40)
+                ),
+                child: const Text(
+                  'Démarrer', 
+                    style:TextStyle(
+                      fontFamily: 'Nunito',
+                    )
+                  ),
+                  onPressed: () => 
+                    {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen()))
+                    }
+              ),
+            ),
+      ]
+      ,)
+      
+
     );
   }
 }
-
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,10 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return  Scaffold(
-      appBar: AppBar(
-        
-      ),
-      
+      appBar: AppBar(),
       body:Form(
         key:formKey,
         child: Column(
@@ -104,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     )
                   ),
                   onPressed: () => formKey.currentState!.validate()
-                    ? {Navigator.of(context).push(MaterialPageRoute(builder: (context) => const Homepage())),
+                    ? {Navigator.of(context).push(MaterialPageRoute(builder: (context) => const HomePageScreen())),
                     Authentication.isLoggedIn = true
                     }
 
