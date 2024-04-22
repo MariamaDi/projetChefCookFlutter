@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "197258925977",
+    "project_id": "chefcook-flutter",
+    "storage_bucket": "chefcook-flutter.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:197258925977:android:913c8d604a9d8c80116508",
+        "android_client_info": {
+          "package_name": "com.example.chefcook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGWiC6gUxCYabEAe7pp_SD1BFt-l51ll8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
