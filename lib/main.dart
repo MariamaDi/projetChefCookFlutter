@@ -5,11 +5,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(const MainApp());
+}
+
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: HomePageScreen(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
 }
 
 class HomeScreen extends StatelessWidget {
@@ -140,10 +151,6 @@ class EntreesTab extends StatelessWidget {
         );
       },
     );
-    return const MaterialApp(
-      home: HomePageScreen(),
-      debugShowCheckedModeBanner: false,
-    );
   }
 }
 
@@ -228,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       // Connexion réussie
       Navigator.of(context)
-          .push(MaterialPageRoute(builder: (context) => HomePageScreen()));
+          .push(MaterialPageRoute(builder: (context) => RecipesPage()));
     } catch (e) {
       // Gérer les erreurs de connexion
       // Afficher un message d'erreur à l'utilisateur
