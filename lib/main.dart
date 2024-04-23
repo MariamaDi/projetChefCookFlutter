@@ -94,12 +94,12 @@ class RecipesPage extends StatelessWidget {
                 ),
               ),
               Container(
-                height: 300, // Hauteur fixe pour le contenu des onglets
+                height: 300,
                 child: TabBarView(
                   children: [
-                    EntreesTab(), // Widget personnalisé pour afficher les entrées
-                    PlatsTab(), // Contenu pour Plats
-                    DessertsTab(), // Contenu pour Desserts
+                    EntreesTab(),
+                    PlatsTab(),
+                    DessertsTab(),
                   ],
                 ),
               ),
@@ -111,17 +111,18 @@ class RecipesPage extends StatelessWidget {
   }
 }
 
-// Définition du modèle pour les entrées
 class Entree {
   final String image;
   final String title;
   final String description;
   final String duration;
+  final List<String> steps;
   Entree(
       {required this.image,
       required this.title,
       required this.description,
-      required this.duration});
+      required this.duration,
+      required this.steps});
 }
 
 class Plat {
@@ -129,12 +130,14 @@ class Plat {
   final String title;
   final String description;
   final String duration;
+  final List<String> steps;
 
   Plat(
       {required this.image,
       required this.title,
       required this.description,
-      required this.duration});
+      required this.duration,
+      required this.steps});
 }
 
 class Dessert {
@@ -142,29 +145,79 @@ class Dessert {
   final String title;
   final String description;
   final String duration;
+  final List<String> steps;
 
-  Dessert(
-      {required this.image,
-      required this.title,
-      required this.description,
-      required this.duration});
+  Dessert({
+    required this.image,
+    required this.title,
+    required this.description,
+    required this.duration,
+    required this.steps,
+  });
+}
+
+class RecipeStepsPage extends StatelessWidget {
+  final String title;
+  final String imagePath;
+  final List<String> steps;
+
+  const RecipeStepsPage({
+    Key? key,
+    required this.title,
+    required this.imagePath,
+    required this.steps,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Image.asset(imagePath, fit: BoxFit.cover),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: steps
+                    .map((step) => Text(step, style: TextStyle(fontSize: 16)))
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class EntreesTab extends StatelessWidget {
-  // Création d'une liste d'exemple d'entrées
   final List<Entree> entrees = [
     Entree(
       image: 'assets/salade.jpg',
       title: 'Salade Niçoise',
       description: 'Une salade riche et fraîche parfaite pour l\'été.',
       duration: '15 min',
+      steps: [
+        "Rincer la salade.",
+        "Couper les oignons.",
+        "Ajouter des tomates et des olives.",
+        "Assaisonner avec de l'huile d'olive et du vinaigre."
+      ],
     ),
     Entree(
-      // Nouvelle entrée ajoutée
-      image: 'assets/salade.jpg',
+      image: 'assets/houmous.jpg',
       title: 'Houmous Lovers',
       description: 'Houmous savoureux.',
       duration: '25 min',
+      steps: [
+        "Tremper les pois chiches pendant la nuit.",
+        "Mélanger les pois chiches avec du tahini, de l'ail, et du jus de citron.",
+        "Servir avec de l'huile d'olive."
+      ],
     ),
   ];
 
@@ -175,10 +228,16 @@ class EntreesTab extends StatelessWidget {
       itemBuilder: (context, index) {
         Entree entree = entrees[index];
         return ListTile(
-          leading: Image.asset(entree.image, width: 100), // Image à gauche
+          leading: Image.asset(entree.image, width: 100),
           title: Text(entree.title),
           subtitle: Text('${entree.description} - ${entree.duration}'),
-          trailing: Icon(Icons.arrow_forward_ios),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => RecipeStepsPage(
+              title: entree.title,
+              imagePath: entree.image,
+              steps: entree.steps,
+            ),
+          )),
         );
       },
     );
@@ -188,17 +247,30 @@ class EntreesTab extends StatelessWidget {
 class PlatsTab extends StatelessWidget {
   final List<Plat> plats = [
     Plat(
-      image: 'assets/salade.jpg',
+      image: 'assets/salade.jpg', // Assurez-vous que l'image est correcte
       title: 'Poulet Rôti',
       description:
           'Poulet rôti croustillant sur le dessus et juteux à l\'intérieur.',
       duration: '1h 30 min',
+      steps: [
+        "Préchauffer le four à 180°C.",
+        "Assaisonner le poulet avec du sel, poivre, et herbes de Provence.",
+        "Placer le poulet dans un plat allant au four.",
+        "Cuire au four pendant environ 90 minutes."
+      ],
     ),
     Plat(
-      image: 'assets/salade.jpg',
+      image: 'assets/salade.jpg', // Assurez-vous que l'image est correcte
       title: 'Pasta Carbonara',
       description: 'Pâtes fraîches avec une sauce carbonara crémeuse.',
       duration: '25 min',
+      steps: [
+        "Cuire les pâtes al dente selon les instructions du paquet.",
+        "Dans une poêle, cuire des lardons jusqu'à ce qu'ils soient croustillants.",
+        "Battre des œufs avec du parmesan râpé.",
+        "Mélanger les pâtes chaudes avec le mélange d'œufs et les lardons.",
+        "Servir immédiatement avec un peu de poivre noir et du parmesan supplémentaire."
+      ],
     ),
   ];
 
@@ -212,7 +284,15 @@ class PlatsTab extends StatelessWidget {
           leading: Image.asset(plat.image, width: 100),
           title: Text(plat.title),
           subtitle: Text('${plat.description} - ${plat.duration}'),
-          trailing: Icon(Icons.arrow_forward_ios),
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => RecipeStepsPage(
+                title: plat.title,
+                imagePath: plat.image,
+                steps: plat.steps,
+              ),
+            ));
+          },
         );
       },
     );
@@ -222,16 +302,29 @@ class PlatsTab extends StatelessWidget {
 class DessertsTab extends StatelessWidget {
   final List<Dessert> desserts = [
     Dessert(
-      image: 'assets/salade.jpg',
+      image: 'assets/salade.jpg', // Assurez-vous que l'image est correcte
       title: 'Tarte aux Pommes',
       description: 'Tarte aux pommes classique avec une pâte croustillante.',
       duration: '50 min',
+      steps: [
+        "Préchauffer le four à 180°C.",
+        "Étaler la pâte dans un moule à tarte.",
+        "Disposer les pommes coupées sur la pâte.",
+        "Saupoudrer de sucre et ajouter des noisettes de beurre.",
+        "Cuire au four pendant environ 50 minutes."
+      ],
     ),
     Dessert(
-      image: 'assets/salade.jpg',
+      image: 'assets/salade.jpg', // Assurez-vous que l'image est correcte
       title: 'Cheesecake',
       description: 'Cheesecake riche et crémeux sur une base de biscuit.',
       duration: '2h 20 min',
+      steps: [
+        "Mélanger les miettes de biscuit avec du beurre fondu et presser dans le fond d'un moule.",
+        "Battre le fromage à la crème avec du sucre, des œufs et de la vanille.",
+        "Verser sur la base de biscuit et cuire au four.",
+        "Laisser refroidir et réfrigérer pendant au moins 4 heures."
+      ],
     ),
   ];
 
@@ -245,7 +338,15 @@ class DessertsTab extends StatelessWidget {
           leading: Image.asset(dessert.image, width: 100),
           title: Text(dessert.title),
           subtitle: Text('${dessert.description} - ${dessert.duration}'),
-          trailing: Icon(Icons.arrow_forward_ios),
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => RecipeStepsPage(
+                title: dessert.title,
+                imagePath: dessert.image,
+                steps: dessert.steps,
+              ),
+            ));
+          },
         );
       },
     );
