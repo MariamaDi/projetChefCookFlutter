@@ -247,7 +247,7 @@ class EntreesTab extends StatelessWidget {
 class PlatsTab extends StatelessWidget {
   final List<Plat> plats = [
     Plat(
-      image: 'assets/salade.jpg', // Assurez-vous que l'image est correcte
+      image: 'assets/salade.jpg',
       title: 'Poulet Rôti',
       description:
           'Poulet rôti croustillant sur le dessus et juteux à l\'intérieur.',
@@ -260,7 +260,7 @@ class PlatsTab extends StatelessWidget {
       ],
     ),
     Plat(
-      image: 'assets/salade.jpg', // Assurez-vous que l'image est correcte
+      image: 'assets/salade.jpg',
       title: 'Pasta Carbonara',
       description: 'Pâtes fraîches avec une sauce carbonara crémeuse.',
       duration: '25 min',
@@ -302,7 +302,7 @@ class PlatsTab extends StatelessWidget {
 class DessertsTab extends StatelessWidget {
   final List<Dessert> desserts = [
     Dessert(
-      image: 'assets/salade.jpg', // Assurez-vous que l'image est correcte
+      image: 'assets/salade.jpg',
       title: 'Tarte aux Pommes',
       description: 'Tarte aux pommes classique avec une pâte croustillante.',
       duration: '50 min',
@@ -315,7 +315,7 @@ class DessertsTab extends StatelessWidget {
       ],
     ),
     Dessert(
-      image: 'assets/salade.jpg', // Assurez-vous que l'image est correcte
+      image: 'assets/salade.jpg',
       title: 'Cheesecake',
       description: 'Cheesecake riche et crémeux sur une base de biscuit.',
       duration: '2h 20 min',
