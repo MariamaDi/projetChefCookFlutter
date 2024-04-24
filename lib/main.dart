@@ -2,12 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
-void main() async {
+void main() async {  
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(const MainApp());
+}
+
+Future<String> getImageDownloadUrl(String imagePath) async {
+  // Obtenez une référence au fichier dans Firebase Storage
+  Reference ref = FirebaseStorage.instance.ref().child(imagePath);
+
+  try {
+    // Obtenez l'URL de téléchargement du fichier
+    String downloadURL = await ref.getDownloadURL();
+    return downloadURL;
+  } catch (e) {
+    // Gérer les erreurs, par exemple si le fichier n'existe pas
+    print('Erreur lors de l\'obtention de l\'URL de téléchargement : $e');
+    return ''; // Retourner une chaîne vide ou une valeur par défaut en cas d'erreur
+  }
 }
 
 class MainApp extends StatelessWidget {
@@ -15,91 +32,101 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       home: HomePageScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3, // Nombre d'onglets
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Mon Application'),
-          bottom: TabBar(
-            tabs: [
-              Tab(text: 'Accueil', icon: Icon(Icons.home)),
-              Tab(text: 'Deconnecter', icon: Icon(Icons.book)),
-              Tab(text: 'Recettes', icon: Icon(Icons.login)),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            Center(child: Text('Page Accueil')),
-            Center(child: Text('Page Connexion')),
-            RecipesPage(), // La page "Recettes" avec onglets et contenu
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class RecipesPage extends StatelessWidget {
+  final String firstName;
+  final String lastName;
+
+  RecipesPage({required this.firstName, required this.lastName});
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
+        appBar: AppBar(
+          leading: Image.asset('assets/Logo.png'),
+          title: Text('Bonjour $firstName $lastName !',
+              style: TextStyle(fontSize: 18, fontFamily: 'Nunito')),
+          actions: [
+            IconButton(
+              onPressed: () async {
+                try {
+                  await FirebaseAuth.instance.signOut();
+
+                  Navigator.of(context)..pushReplacement(MaterialPageRoute(
+                      builder: (context) => HomePageScreen()));
+                } catch (e) {
+                  print('Erreur lors de la déconnexion: $e');
+                }
+              },
+              icon: Icon(Icons.logout),
+            ),
+          ],
+        ),
         body: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(0),
                 child: Column(
                   children: [
-                    Text('Bonjour Sophie', style: TextStyle(fontSize: 24)),
-                    Text('On cuisine?', style: TextStyle(fontSize: 20)),
-                    SizedBox(height: 20),
-                    Image.asset('assets/imageAccueil.jpg'), // Image en haut
+                    Text('On cuisine ?',
+                        style: TextStyle(
+                            fontSize: 24,
+                            fontFamily: 'Nunito',
+                            fontWeight: FontWeight.bold)),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(15.0),
+                      child: Image.asset(
+                          'assets/imageAccueil.jpg'), // Image en haut
+                    ),
                   ],
                 ),
+              ),
+              SizedBox(
+                height: 10,
               ),
               Center(
-                child: TabBar(
-                  // Centrage horizontal des onglets
-                  tabs: [
-                    Tab(
-                        icon: Column(children: [
-                      Image.asset('assets/entrees.png', height: 50),
-                      Text('Entrées')
-                    ])),
-                    Tab(
-                        icon: Column(children: [
-                      Image.asset('assets/plats.png', height: 50),
-                      Text('Plat')
-                    ])),
-                    Tab(
-                        icon: Column(children: [
-                      Image.asset('assets/desserts.png', height: 50),
-                      Text('Desserts')
-                    ])),
-                  ],
+                child: Container(
+                  child: TabBar(
+                    // Centrage horizontal des onglets
+                    tabs: [
+                      Tab(
+                          icon: Column(children: [
+                        Image.asset('assets/entrees.png', height: 25),
+                        Text('Entrées')
+                      ])),
+                      Tab(
+                          icon: Column(children: [
+                        Image.asset('assets/plats.png', height: 25),
+                        Text('Plat')
+                      ])),
+                      Tab(
+                          icon: Column(children: [
+                        Image.asset('assets/desserts.png', height: 25),
+                        Text('Desserts')
+                      ])),
+                    ],
+                  ),
                 ),
               ),
+              SizedBox(
+                height: 10,
+              ),
               Container(
-                height: 300,
+                height: 200, // Hauteur fixe pour le contenu des onglets
                 child: TabBarView(
                   children: [
-                    EntreesTab(),
-                    PlatsTab(),
-                    DessertsTab(),
+                    EntreesTab(), // Widget personnalisé pour afficher les entrées
+                    PlatsTab(), // Contenu pour Plats
+                    DessertsTab(), // Contenu pour Desserts
                   ],
                 ),
               ),
@@ -159,10 +186,12 @@ class Dessert {
 class RecipeStepsPage extends StatelessWidget {
   final String title;
   final String imagePath;
+  final List<String> ingredients;
   final List<String> steps;
 
   const RecipeStepsPage({
     Key? key,
+    required this.ingredients,
     required this.title,
     required this.imagePath,
     required this.steps,
@@ -177,14 +206,20 @@ class RecipeStepsPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Image.asset(imagePath, fit: BoxFit.cover),
+            Image.network(imagePath, fit: BoxFit.cover),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: steps
-                    .map((step) => Text(step, style: TextStyle(fontSize: 16)))
-                    .toList(),
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children:ingredients.map((step) => Text(step, style: TextStyle(fontSize: 16))).toList(),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children:steps.map((step) => Text(step, style: TextStyle(fontSize: 16))).toList(),
+                  )
+                ],
               ),
             ),
           ],
@@ -195,160 +230,202 @@ class RecipeStepsPage extends StatelessWidget {
 }
 
 class EntreesTab extends StatelessWidget {
-  final List<Entree> entrees = [
-    Entree(
-      image: 'assets/salade.jpg',
-      title: 'Salade Niçoise',
-      description: 'Une salade riche et fraîche parfaite pour l\'été.',
-      duration: '15 min',
-      steps: [
-        "Rincer la salade.",
-        "Couper les oignons.",
-        "Ajouter des tomates et des olives.",
-        "Assaisonner avec de l'huile d'olive et du vinaigre."
-      ],
-    ),
-    Entree(
-      image: 'assets/houmous.jpg',
-      title: 'Houmous Lovers',
-      description: 'Houmous savoureux.',
-      duration: '25 min',
-      steps: [
-        "Tremper les pois chiches pendant la nuit.",
-        "Mélanger les pois chiches avec du tahini, de l'ail, et du jus de citron.",
-        "Servir avec de l'huile d'olive."
-      ],
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: entrees.length,
-      itemBuilder: (context, index) {
-        Entree entree = entrees[index];
-        return ListTile(
-          leading: Image.asset(entree.image, width: 100),
-          title: Text(entree.title),
-          subtitle: Text('${entree.description} - ${entree.duration}'),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => RecipeStepsPage(
-              title: entree.title,
-              imagePath: entree.image,
-              steps: entree.steps,
-            ),
-          )),
-        );
-      },
+    return Scaffold(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('Recipes').where('type', isEqualTo: 'Entrée').snapshots(),
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasError) {
+            return Text('Une erreur s\'est produite : ${snapshot.error}');
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Text('Chargement...');
+          }
+
+          List<QueryDocumentSnapshot> documents = snapshot.data!.docs;
+
+          return ListView.builder(
+            itemCount: documents.length,
+            itemBuilder: (BuildContext context, int index) {
+              QueryDocumentSnapshot document = documents[index];
+              Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+              List<String> ingredients = (data['ingrédients'] as List<dynamic>).map((step) => step.toString()).toList();
+              List<String> steps = (data['étapes'] as List<dynamic>).map((step) => step.toString()).toList();
+
+              return FutureBuilder<String>(
+                future: getImageDownloadUrl(data['imageUrl']),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator(); // Affiche un indicateur de chargement en attendant l'URL de l'image
+                  }
+                  if (snapshot.hasError) {
+                    return Text('Erreur : ${snapshot.error}'); // Affiche un message d'erreur s'il y a un problème
+                  }
+                  String imageUrl = snapshot.data!;
+
+                return ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      imageUrl,
+                      width: 75,
+                      height: 75,
+                    ),
+                  ), // Image à gauche
+
+                  title: Text(data['intitulé']),
+                  subtitle: Text('${data['description']} - ${data['durée']}'),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => RecipeStepsPage(
+                      title: data['intitulé'],
+                      ingredients: ingredients,
+                      imagePath: imageUrl,
+                      steps: steps,
+                    ),
+                  )),
+                );
+                }
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
 
 class PlatsTab extends StatelessWidget {
-  final List<Plat> plats = [
-    Plat(
-      image: 'assets/salade.jpg',
-      title: 'Poulet Rôti',
-      description:
-          'Poulet rôti croustillant sur le dessus et juteux à l\'intérieur.',
-      duration: '1h 30 min',
-      steps: [
-        "Préchauffer le four à 180°C.",
-        "Assaisonner le poulet avec du sel, poivre, et herbes de Provence.",
-        "Placer le poulet dans un plat allant au four.",
-        "Cuire au four pendant environ 90 minutes."
-      ],
-    ),
-    Plat(
-      image: 'assets/salade.jpg',
-      title: 'Pasta Carbonara',
-      description: 'Pâtes fraîches avec une sauce carbonara crémeuse.',
-      duration: '25 min',
-      steps: [
-        "Cuire les pâtes al dente selon les instructions du paquet.",
-        "Dans une poêle, cuire des lardons jusqu'à ce qu'ils soient croustillants.",
-        "Battre des œufs avec du parmesan râpé.",
-        "Mélanger les pâtes chaudes avec le mélange d'œufs et les lardons.",
-        "Servir immédiatement avec un peu de poivre noir et du parmesan supplémentaire."
-      ],
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: plats.length,
-      itemBuilder: (context, index) {
-        Plat plat = plats[index];
-        return ListTile(
-          leading: Image.asset(plat.image, width: 100),
-          title: Text(plat.title),
-          subtitle: Text('${plat.description} - ${plat.duration}'),
-          onTap: () {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => RecipeStepsPage(
-                title: plat.title,
-                imagePath: plat.image,
-                steps: plat.steps,
-              ),
-            ));
-          },
-        );
-      },
+    return Scaffold(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('Recipes').where('type', isEqualTo: 'Plat').snapshots(),
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasError) {
+            return Text('Une erreur s\'est produite : ${snapshot.error}');
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Text('Chargement...');
+          }
+
+          List<QueryDocumentSnapshot> documents = snapshot.data!.docs;
+
+          return ListView.builder(
+            itemCount: documents.length,
+            itemBuilder: (BuildContext context, int index) {
+              QueryDocumentSnapshot document = documents[index];
+              Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+              List<String> ingredients = (data['ingrédients'] as List<dynamic>).map((step) => step.toString()).toList();
+              List<String> steps = (data['étapes'] as List<dynamic>).map((step) => step.toString()).toList();
+
+              return FutureBuilder<String>(
+                future: getImageDownloadUrl(data['imageUrl']),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator(); // Affiche un indicateur de chargement en attendant l'URL de l'image
+                  }
+                  if (snapshot.hasError) {
+                    return Text('Erreur : ${snapshot.error}'); // Affiche un message d'erreur s'il y a un problème
+                  }
+                  String imageUrl = snapshot.data!;
+
+                return ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      imageUrl,
+                      width: 75,
+                      height: 75,
+                    ),
+                  ), // Image à gauche
+
+                  title: Text(data['intitulé']),
+                  subtitle: Text('${data['description']} - ${data['durée']}'),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => RecipeStepsPage(
+                      title: data['intitulé'],
+                      ingredients: ingredients,
+                      imagePath: imageUrl,
+                      steps: steps,
+                    ),
+                  )),
+                );
+                }
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
 
 class DessertsTab extends StatelessWidget {
-  final List<Dessert> desserts = [
-    Dessert(
-      image: 'assets/salade.jpg',
-      title: 'Tarte aux Pommes',
-      description: 'Tarte aux pommes classique avec une pâte croustillante.',
-      duration: '50 min',
-      steps: [
-        "Préchauffer le four à 180°C.",
-        "Étaler la pâte dans un moule à tarte.",
-        "Disposer les pommes coupées sur la pâte.",
-        "Saupoudrer de sucre et ajouter des noisettes de beurre.",
-        "Cuire au four pendant environ 50 minutes."
-      ],
-    ),
-    Dessert(
-      image: 'assets/salade.jpg',
-      title: 'Cheesecake',
-      description: 'Cheesecake riche et crémeux sur une base de biscuit.',
-      duration: '2h 20 min',
-      steps: [
-        "Mélanger les miettes de biscuit avec du beurre fondu et presser dans le fond d'un moule.",
-        "Battre le fromage à la crème avec du sucre, des œufs et de la vanille.",
-        "Verser sur la base de biscuit et cuire au four.",
-        "Laisser refroidir et réfrigérer pendant au moins 4 heures."
-      ],
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: desserts.length,
-      itemBuilder: (context, index) {
-        Dessert dessert = desserts[index];
-        return ListTile(
-          leading: Image.asset(dessert.image, width: 100),
-          title: Text(dessert.title),
-          subtitle: Text('${dessert.description} - ${dessert.duration}'),
-          onTap: () {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => RecipeStepsPage(
-                title: dessert.title,
-                imagePath: dessert.image,
-                steps: dessert.steps,
-              ),
-            ));
-          },
-        );
-      },
+    return Scaffold(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('Recipes').where('type', isEqualTo: 'Dessert').snapshots(),
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasError) {
+            return Text('Une erreur s\'est produite : ${snapshot.error}');
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Text('Chargement...');
+          }
+
+          List<QueryDocumentSnapshot> documents = snapshot.data!.docs;
+
+          return ListView.builder(
+            itemCount: documents.length,
+            itemBuilder: (BuildContext context, int index) {
+              QueryDocumentSnapshot document = documents[index];
+              Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+              List<String> ingredients = (data['ingrédients'] as List<dynamic>).map((step) => step.toString()).toList();
+              List<String> steps = (data['étapes'] as List<dynamic>).map((step) => step.toString()).toList();
+
+              return FutureBuilder<String>(
+                future: getImageDownloadUrl(data['imageUrl']),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator(); // Affiche un indicateur de chargement en attendant l'URL de l'image
+                  }
+                  if (snapshot.hasError) {
+                    return Text('Erreur : ${snapshot.error}'); // Affiche un message d'erreur s'il y a un problème
+                  }
+                  String imageUrl = snapshot.data!;
+
+                return ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      imageUrl,
+                      width: 75,
+                      height: 75,
+                    ),
+                  ), // Image à gauche
+
+                  title: Text(data['intitulé']),
+                  subtitle: Text('${data['description']} - ${data['durée']}'),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => RecipeStepsPage(
+                      title: data['intitulé'],
+                      ingredients: ingredients,
+                      imagePath: imageUrl,
+                      steps: steps,
+                    ),
+                  )),
+                );
+                }
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
@@ -419,6 +496,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
+  String firstName = '';
+  String lastName = '';
+  bool passwordVisible = true;
   final formKey = GlobalKey<FormState>();
 
   Map<String, dynamic> userData = {
@@ -432,9 +512,26 @@ class _LoginScreenState extends State<LoginScreen> {
         email: email,
         password: password,
       );
-      // Connexion réussie
-      Navigator.of(context)
-          .push(MaterialPageRoute(builder: (context) => RecipesPage()));
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+            .collection('User')
+            .doc(user.uid)
+            .get();
+        Map<String, dynamic>? userData =
+            userSnapshot.data() as Map<String, dynamic>?;
+        if (userData != null) {
+          setState(() {
+            firstName = userData['firstName'];
+            lastName = userData['lastName'];
+          });
+        }
+
+        // Connexion réussie
+        Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) =>
+                RecipesPage(firstName: firstName, lastName: lastName)));
+      }
     } catch (e) {
       // Gérer les erreurs de connexion
       // Afficher un message d'erreur à l'utilisateur
@@ -449,73 +546,85 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(),
         body: Form(
-          key: formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/Logo.png',
-                height: 145,
-                width: 145,
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 50.0),
-                child: TextFormField(
-                  decoration: InputDecoration(
-                      label: Text('Email'),
-                      labelStyle: TextStyle(
-                        fontFamily: 'Nunito',
-                      )),
-                  controller: emailController,
-                  validator: (String? value) {
-                    return value?.isNotEmpty == true
-                        ? null
-                        : 'Veuillez renseigner votre adresse mail';
-                  },
-                  onSaved: (String? value) => userData['Email'] = value,
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 50.0),
-                child: TextFormField(
-                  decoration: InputDecoration(
-                      label: Text('Mot de passe'),
-                      labelStyle: TextStyle(
-                        fontFamily: 'Nunito',
-                      )),
-                  controller: passwordController,
-                  validator: (String? value) {
-                    return value?.isNotEmpty == true
-                        ? null
-                        : 'Veuillez renseigner votre mot de passe';
-                  },
-                  onSaved: (String? value) => userData['Password'] = value,
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 50.0),
-                child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0XFFFFC500),
-                        padding:
-                            EdgeInsets.symmetric(vertical: 20, horizontal: 40)),
-                    child: const Text('Connexion',
-                        style: TextStyle(
-                          fontFamily: 'Nunito',
-                        )),
-                    onPressed: () {
-                      if (formKey.currentState!.validate()) {
-                        signInWithEmailAndPassword(
-                          emailController.text,
-                          passwordController.text,
-                        );
-                      }
-                    }),
-              ),
-            ],
+      key: formKey,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/Logo.png',
+            height: 145,
+            width: 145,
           ),
-        ));
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 50.0),
+            child: TextFormField(
+              decoration: InputDecoration(
+                  label: Text('Email'),
+                  labelStyle: TextStyle(
+                    fontFamily: 'Nunito',
+                  )),
+              controller: emailController,
+              validator: (String? value) {
+                return value?.isNotEmpty == true
+                    ? null
+                    : 'Veuillez renseigner votre adresse mail';
+              },
+              onSaved: (String? value) => userData['Email'] = value,
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 50.0),
+            child: TextFormField(
+              obscureText: passwordVisible,
+              decoration: InputDecoration(
+                  suffixIcon: IconButton(
+                    icon: Icon(passwordVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off),
+                    onPressed: () {
+                      setState(
+                        () {
+                          passwordVisible = !passwordVisible;
+                        },
+                      );
+                    },
+                  ),
+                  label: Text('Mot de passe'),
+                  labelStyle: TextStyle(
+                    fontFamily: 'Nunito',
+                  )),
+              controller: passwordController,
+              validator: (String? value) {
+                return value?.isNotEmpty == true
+                    ? null
+                    : 'Veuillez renseigner votre mot de passe';
+              },
+              onSaved: (String? value) => userData['Password'] = value,
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 50.0),
+            child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0XFFFFC500),
+                    padding:
+                        EdgeInsets.symmetric(vertical: 20, horizontal: 40)),
+                child: const Text('Connexion',
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                    )),
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    signInWithEmailAndPassword(
+                      emailController.text,
+                      passwordController.text,
+                    );
+                  }
+                }),
+          ),
+        ],
+      ),
+    ));
   }
 }
