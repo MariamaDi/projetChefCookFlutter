@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-void main() async {  
+void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -59,8 +59,9 @@ class RecipesPage extends StatelessWidget {
                 try {
                   await FirebaseAuth.instance.signOut();
 
-                  Navigator.of(context)..pushReplacement(MaterialPageRoute(
-                      builder: (context) => HomePageScreen()));
+                  Navigator.of(context)
+                    ..pushReplacement(MaterialPageRoute(
+                        builder: (context) => HomePageScreen()));
                 } catch (e) {
                   print('Erreur lors de la déconnexion: $e');
                 }
@@ -206,19 +207,28 @@ class RecipeStepsPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Image.network(imagePath, fit: BoxFit.cover),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Image.network(imagePath, fit: BoxFit.cover),
+              ),
+            ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children:ingredients.map((step) => Text(step, style: TextStyle(fontSize: 16))).toList(),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children:steps.map((step) => Text(step, style: TextStyle(fontSize: 16))).toList(),
-                  )
+                  ...ingredients
+                      .map((ingredient) =>
+                          Text('- $ingredient', style: TextStyle(fontSize: 16)))
+                      .toList(),
+                  SizedBox(
+                      height:
+                          10), // Ajoute un espace entre les ingrédients et les étapes
+                  ...steps
+                      .map((step) =>
+                          Text('- $step', style: TextStyle(fontSize: 16)))
+                      .toList(),
                 ],
               ),
             ),
@@ -234,7 +244,10 @@ class EntreesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('Recipes').where('type', isEqualTo: 'Entrée').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('Recipes')
+            .where('type', isEqualTo: 'Entrée')
+            .snapshots(),
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.hasError) {
             return Text('Une erreur s\'est produite : ${snapshot.error}');
@@ -250,44 +263,50 @@ class EntreesTab extends StatelessWidget {
             itemCount: documents.length,
             itemBuilder: (BuildContext context, int index) {
               QueryDocumentSnapshot document = documents[index];
-              Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-              List<String> ingredients = (data['ingrédients'] as List<dynamic>).map((step) => step.toString()).toList();
-              List<String> steps = (data['étapes'] as List<dynamic>).map((step) => step.toString()).toList();
+              Map<String, dynamic> data =
+                  document.data() as Map<String, dynamic>;
+              List<String> ingredients = (data['ingrédients'] as List<dynamic>)
+                  .map((step) => step.toString())
+                  .toList();
+              List<String> steps = (data['étapes'] as List<dynamic>)
+                  .map((step) => step.toString())
+                  .toList();
 
               return FutureBuilder<String>(
-                future: getImageDownloadUrl(data['imageUrl']),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator(); // Affiche un indicateur de chargement en attendant l'URL de l'image
-                  }
-                  if (snapshot.hasError) {
-                    return Text('Erreur : ${snapshot.error}'); // Affiche un message d'erreur s'il y a un problème
-                  }
-                  String imageUrl = snapshot.data!;
+                  future: getImageDownloadUrl(data['imageUrl']),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator(); // Affiche un indicateur de chargement en attendant l'URL de l'image
+                    }
+                    if (snapshot.hasError) {
+                      return Text(
+                          'Erreur : ${snapshot.error}'); // Affiche un message d'erreur s'il y a un problème
+                    }
+                    String imageUrl = snapshot.data!;
 
-                return ListTile(
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      imageUrl,
-                      width: 75,
-                      height: 75,
-                    ),
-                  ), // Image à gauche
+                    return ListTile(
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          imageUrl,
+                          width: 75,
+                          height: 75,
+                        ),
+                      ), // Image à gauche
 
-                  title: Text(data['intitulé']),
-                  subtitle: Text('${data['description']} - ${data['durée']}'),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => RecipeStepsPage(
-                      title: data['intitulé'],
-                      ingredients: ingredients,
-                      imagePath: imageUrl,
-                      steps: steps,
-                    ),
-                  )),
-                );
-                }
-              );
+                      title: Text(data['intitulé']),
+                      subtitle:
+                          Text('${data['description']} - ${data['durée']}'),
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => RecipeStepsPage(
+                          title: data['intitulé'],
+                          ingredients: ingredients,
+                          imagePath: imageUrl,
+                          steps: steps,
+                        ),
+                      )),
+                    );
+                  });
             },
           );
         },
@@ -301,7 +320,10 @@ class PlatsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('Recipes').where('type', isEqualTo: 'Plat').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('Recipes')
+            .where('type', isEqualTo: 'Plat')
+            .snapshots(),
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.hasError) {
             return Text('Une erreur s\'est produite : ${snapshot.error}');
@@ -317,44 +339,50 @@ class PlatsTab extends StatelessWidget {
             itemCount: documents.length,
             itemBuilder: (BuildContext context, int index) {
               QueryDocumentSnapshot document = documents[index];
-              Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-              List<String> ingredients = (data['ingrédients'] as List<dynamic>).map((step) => step.toString()).toList();
-              List<String> steps = (data['étapes'] as List<dynamic>).map((step) => step.toString()).toList();
+              Map<String, dynamic> data =
+                  document.data() as Map<String, dynamic>;
+              List<String> ingredients = (data['ingrédients'] as List<dynamic>)
+                  .map((step) => step.toString())
+                  .toList();
+              List<String> steps = (data['étapes'] as List<dynamic>)
+                  .map((step) => step.toString())
+                  .toList();
 
               return FutureBuilder<String>(
-                future: getImageDownloadUrl(data['imageUrl']),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator(); // Affiche un indicateur de chargement en attendant l'URL de l'image
-                  }
-                  if (snapshot.hasError) {
-                    return Text('Erreur : ${snapshot.error}'); // Affiche un message d'erreur s'il y a un problème
-                  }
-                  String imageUrl = snapshot.data!;
+                  future: getImageDownloadUrl(data['imageUrl']),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator(); // Affiche un indicateur de chargement en attendant l'URL de l'image
+                    }
+                    if (snapshot.hasError) {
+                      return Text(
+                          'Erreur : ${snapshot.error}'); // Affiche un message d'erreur s'il y a un problème
+                    }
+                    String imageUrl = snapshot.data!;
 
-                return ListTile(
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      imageUrl,
-                      width: 75,
-                      height: 75,
-                    ),
-                  ), // Image à gauche
+                    return ListTile(
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          imageUrl,
+                          width: 75,
+                          height: 75,
+                        ),
+                      ), // Image à gauche
 
-                  title: Text(data['intitulé']),
-                  subtitle: Text('${data['description']} - ${data['durée']}'),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => RecipeStepsPage(
-                      title: data['intitulé'],
-                      ingredients: ingredients,
-                      imagePath: imageUrl,
-                      steps: steps,
-                    ),
-                  )),
-                );
-                }
-              );
+                      title: Text(data['intitulé']),
+                      subtitle:
+                          Text('${data['description']} - ${data['durée']}'),
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => RecipeStepsPage(
+                          title: data['intitulé'],
+                          ingredients: ingredients,
+                          imagePath: imageUrl,
+                          steps: steps,
+                        ),
+                      )),
+                    );
+                  });
             },
           );
         },
@@ -368,7 +396,10 @@ class DessertsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('Recipes').where('type', isEqualTo: 'Dessert').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('Recipes')
+            .where('type', isEqualTo: 'Dessert')
+            .snapshots(),
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.hasError) {
             return Text('Une erreur s\'est produite : ${snapshot.error}');
@@ -384,44 +415,50 @@ class DessertsTab extends StatelessWidget {
             itemCount: documents.length,
             itemBuilder: (BuildContext context, int index) {
               QueryDocumentSnapshot document = documents[index];
-              Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-              List<String> ingredients = (data['ingrédients'] as List<dynamic>).map((step) => step.toString()).toList();
-              List<String> steps = (data['étapes'] as List<dynamic>).map((step) => step.toString()).toList();
+              Map<String, dynamic> data =
+                  document.data() as Map<String, dynamic>;
+              List<String> ingredients = (data['ingrédients'] as List<dynamic>)
+                  .map((step) => step.toString())
+                  .toList();
+              List<String> steps = (data['étapes'] as List<dynamic>)
+                  .map((step) => step.toString())
+                  .toList();
 
               return FutureBuilder<String>(
-                future: getImageDownloadUrl(data['imageUrl']),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator(); // Affiche un indicateur de chargement en attendant l'URL de l'image
-                  }
-                  if (snapshot.hasError) {
-                    return Text('Erreur : ${snapshot.error}'); // Affiche un message d'erreur s'il y a un problème
-                  }
-                  String imageUrl = snapshot.data!;
+                  future: getImageDownloadUrl(data['imageUrl']),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator(); // Affiche un indicateur de chargement en attendant l'URL de l'image
+                    }
+                    if (snapshot.hasError) {
+                      return Text(
+                          'Erreur : ${snapshot.error}'); // Affiche un message d'erreur s'il y a un problème
+                    }
+                    String imageUrl = snapshot.data!;
 
-                return ListTile(
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      imageUrl,
-                      width: 75,
-                      height: 75,
-                    ),
-                  ), // Image à gauche
+                    return ListTile(
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          imageUrl,
+                          width: 75,
+                          height: 75,
+                        ),
+                      ), // Image à gauche
 
-                  title: Text(data['intitulé']),
-                  subtitle: Text('${data['description']} - ${data['durée']}'),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => RecipeStepsPage(
-                      title: data['intitulé'],
-                      ingredients: ingredients,
-                      imagePath: imageUrl,
-                      steps: steps,
-                    ),
-                  )),
-                );
-                }
-              );
+                      title: Text(data['intitulé']),
+                      subtitle:
+                          Text('${data['description']} - ${data['durée']}'),
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => RecipeStepsPage(
+                          title: data['intitulé'],
+                          ingredients: ingredients,
+                          imagePath: imageUrl,
+                          steps: steps,
+                        ),
+                      )),
+                    );
+                  });
             },
           );
         },
